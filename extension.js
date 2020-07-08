@@ -15,15 +15,16 @@ let modelStream;
 
 function initModel() {
 	if(!process.env.PRETRAINED_ENG_MODEL_PATH) {
-		process.env.PRETRAINED_ENG_MODEL_PATH = __dirname + "/DeepSpeechPreTrainedModel"
+		process.env.PRETRAINED_ENG_MODEL_PATH = __dirname + "\\DeepSpeechPreTrainedModel"
 	}
 
-	model = new deepSpeech.Model(process.env.PRETRAINED_ENG_MODEL_PATH + ".pbmm")
-	model.enableExternalScorer(process.env.PRETRAINED_ENG_MODEL_PATH + ".scorer")
+	model = new deepSpeech.Model(process.env.PRETRAINED_ENG_MODEL_PATH + "\\deepspeech-0.7.0-models.pbmm")
+	model.enableExternalScorer(process.env.PRETRAINED_ENG_MODEL_PATH + "\\deepspeech-0.7.0-models.scorer")
 	return model
 }
 
 let microphone
+
 function initMic() {
 	microphone = mic()
 	var inputStream = microphone.getAudioStream()
@@ -35,8 +36,8 @@ function initMic() {
 	microphone.start()
 }
 
-model = initModel()
-model.createStream().feedAudioContent
+// model = initModel()
+// model.createStream().feedAudioContent()
 
 function processResults() {
 	model.createStream()
@@ -57,7 +58,8 @@ function activate(context) {
 	// The commandId parameter must match the command field in package.json
 	let disposable = vscode.commands.registerCommand('voice-dev.beginListening', function () {
 		// The code you place here will be executed every time your command is executed
-		initModel()
+		console.log("Listening now")
+		model = initModel()
 		initMic()
 	});
 
