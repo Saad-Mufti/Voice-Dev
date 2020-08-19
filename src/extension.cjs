@@ -1,15 +1,11 @@
-// The module 'vscode' contains the VS Code extensibility API
-// Import the module and reference it with the alias vscode in your code below
 const vscode = require('vscode');
 const vad = require('node-vad')
 const deepSpeech = require('deepspeech')
 const mic = require('node-audiorecorder')
+const NLPUtil = new (require('./nlpUtil').NLPUtility)
+const {GitExtension} = require('./git.d.ts')
+// import './git.d.ts'
 
-const axios = require('axios')
-const NLPUtil = require('./nlpUtil').NLPUtility
-const env = require('./environment').Environment
-
-const nlp = require('node-nlp')
 
 const vadMode = vad.Mode.AGGRESSIVE
 let model;
@@ -18,11 +14,8 @@ let chunks = 0
 let silenceStart = null
 
 
-// this method is called when your extension is activated
-// your extension is activated the very first time the command is executed
-
 function initVoiceModel() {
-	if(!process.env.PRETRAINED_ENG_MODEL_PATH) {
+	if (!process.env.PRETRAINED_ENG_MODEL_PATH) {
 		process.env.PRETRAINED_ENG_MODEL_PATH = __dirname + "\\DeepSpeechPreTrainedModel"
 	}
 
@@ -49,12 +42,12 @@ let options = { // Change this configuration to resolve any hardware related iss
 
 function initMic() {
 	microphone = new mic(options, console)
-	
+
 	var inputStream = microphone.start().stream()
 	modelStream = model.createStream()
 
 	console.log("event names are" + inputStream.eventNames())
-	
+
 	inputStream.on('data', (data) => {
 		beginListening(data)
 	})
@@ -66,7 +59,7 @@ function beginListening(data) {
 
 	let listen = new vad(vadMode)
 	listen.processAudio(data, 16000).then((res) => {
-		switch(res) {
+		switch (res) {
 			case vad.Event.VOICE:
 				console.log("Voice detected")
 				silenceStart = null
@@ -90,36 +83,36 @@ function beginListening(data) {
 				break
 		}
 	}
-		
+
 	);
 }
 
 
 function processSilence(data) {
-	
-	if(chunks > 0) {
-		if(silenceStart === null) { // First instance of silence after hearing voice prior
+
+	if (chunks > 0) {
+		if (silenceStart === null) { // First instance of silence after hearing voice prior
 			silenceStart = new Date().getTime()
 			modelStream.feedAudioContent(data)
 		}
 		else { // Checking to see whether enough silence has passed or not.
-			if(new Date().getTime() - silenceStart > 1000) { // Defined threshold in milliseconds (ms)
+			if (new Date().getTime() - silenceStart > 1000) { // Defined threshold in milliseconds (ms)
 				silenceStart = null
-				
+
 				var res = modelStream.finishStream()
-				if(res) {
+				if (res) {
 					console.log("Result is: " + res)
 					interpretRequest(res)
 				}
 				else {
 					console.log("No result :(" + res)
 				}
-				
+
 				modelStream = model.createStream()
 				chunks = 0
-			} 
+			}
 		}
-		
+
 	}
 	else {
 		// console.log("Just silence......")
@@ -129,47 +122,44 @@ function processSilence(data) {
 
 let language = null
 let classifier = null
-function interpretRequest(input) {
-	if(language !== env.language && language !== null) { // Language has changed, can't go further
+let gitApi
+
+async function interpretRequest(input) {
+	if (language !== vscode.window.activeTextEditor.document.languageId && language !== null) { // Language has changed, can't go further
 		console.log("Target language has changed: " + language)
 	}
 	else {
-		debugger;
-		if(!language) {
-			language = env.language
+		
+		if (!language) {
+			language = vscode.window.activeTextEditor.document.languageId
 		}
-		if(!classifier) {
-			classifier = NLPUtil.loadModel()
+		if (!classifier) {
+			classifier = NLPUtil.vcsTrain()
 		}
 
 		console.log('language is ' + language)
-		
-		let res = classifier.getClassifications(input)
-		let sum = 0;
-		for(var i in res) {
-			sum += res[i]['value']
-		} 
-		if(sum < .80) {
-			console.log('couldnt recognize vcs command')
-			let response = NLPUtil.stackOverflowQuery(input)
+		let res
 
-			console.log(response)
-		}
-		else {
-			console.log('recognized vcs command')
-			env.editor.edit((editBuilder) => {
-				editBuilder.insert()
+		res = await classifier.process('en', input)
+		// debugger;
+		let intent = res.classifications[0].intent
+		console.log(intent)
+		if(intent == 'None') {
+			console.log(gitApi)
+			let editor = vscode.window.activeTextEditor
+    		let cursorPos = editor.selection.active
+			let code = await NLPUtil.stackOverflowQuery(input)
+			editor.edit((editBuilder) => {
+				editBuilder.insert(cursorPos, code)
 			})
 		}
-		
+		else {
+			NLPUtil.vcsOps(input, intent)
+		}
+
 	}
 
 }
-
-function categorize() {
-
-}
-
 
 let silenceBuffers = []
 function bufferSilence(data) {
@@ -190,13 +180,13 @@ function audioTest() { // Works fine!! "C:\\Users\\Saad Mufti\\Downloads\\audio-
 	const MemoryStream = require('memory-stream')
 
 	let audioFilePath = "C:\\Users\\Saad Mufti\\Downloads\\new-file.wav" //__dirname + "\\new-file.wav"
-	if(!Fs.existsSync(audioFilePath)) {
+	if (!Fs.existsSync(audioFilePath)) {
 		console.log("Audio file missing.")
 	}
 	else {
 		let buffer = Fs.readFileSync(audioFilePath)
-		let result = Wav.decode(buffer) 
-		if(result.sampleRate != model.sampleRate()) {
+		let result = Wav.decode(buffer)
+		if (result.sampleRate != model.sampleRate()) {
 			console.log("Sample rates of model and audio file not equal")
 		}
 		let audioStream = new MemoryStream()
@@ -218,15 +208,15 @@ function audioTest() { // Works fine!! "C:\\Users\\Saad Mufti\\Downloads\\audio-
 			}
 		})).pipe(audioStream);
 
-		audioStream.on('finish',() => {
+		audioStream.on('finish', () => {
 			let audioBuffer = audioStream.toBuffer();
-	
+
 			const audioLength = (audioBuffer.length / 2) * (1 / 16000);
 			console.log('audio length', audioLength);
 
 			let result = model.stt(audioBuffer);
 			console.log('result:', result);
-		} )
+		})
 	}
 }
 
@@ -250,21 +240,35 @@ function addBufferedSilence(data) {
  */
 function activate(context) {
 
-	
+
 	// The command has been defined in the package.json file
 	// Now provide the implementation of the command with  registerCommand
 	// The commandId parameter must match the command field in package.json
 	let beginListening = vscode.commands.registerCommand('voice-dev.beginListening', function () {
-		
+
 		console.log("Listening now")
 		model = initVoiceModel()
-		classifier =NLPUtil.vcsTrain()
+		
+		vscode.extensions.getExtension('vscode.git').activate().then((api)=> {
+			console.log('Git extension activated')
+			// debugger
+			gitApi = api.getApi(1)
+		})
+
+		gitApi = vscode.extensions.getExtension('vscode.git').exports.getApi(1)
+
+		NLPUtil.vcsTrain().then(async (thing) => {
+			classifier = thing
+			// let ex = await classifier.process('en', 'commit my code')
+			// debugger
+			// console.log('commit my code: ' + ex.classifications[0].intent)
+		})
 		// audioTest()
 		initMic()
 	});
 
 	let stopListening = vscode.commands.registerCommand('voice-dev.stopListening', () => {
-		if(modelStream) {
+		if (modelStream) {
 			modelStream.finishStream()
 		}
 		microphone.stop()

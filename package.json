@@ -1,8 +1,9 @@
 {
 	"name": "voice-dev",
 	"displayName": "Voice Dev",
-	"description": "",
+	"description": "idk",
 	"version": "0.0.1",
+	
 	"engines": {
 		"vscode": "^1.43.0"
 	},
@@ -13,7 +14,7 @@
 		"onCommand:voice-dev.helloWorld",
 		"onCommand:voice-dev.beginListening"
 	],
-	"main": "./src/extension.js",
+	"main": "./src/extension.cjs",
 	"contributes": {
 		"commands": [
 			{
@@ -49,9 +50,11 @@
 		"vscode-test": "^1.3.0"
 	},
 	"dependencies": {
+		"@nlpjs/core": "^4.10.1",
+		"@nlpjs/nlp": "^4.10.4",
 		"deepspeech": "^0.7.4",
 		"mic": "^2.1.2",
-		"natural": "^2.1.5",
+		"node-nlp": "^4.10.4",
 		"node-vad": "^1.1.4"
 	},
 	"extensionDependencies": [

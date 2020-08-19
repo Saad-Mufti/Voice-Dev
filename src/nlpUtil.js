@@ -1,14 +1,18 @@
 const axios = require('axios').default
-const vscode = require('vscode')
 const env = require('./environment').Environment
-const natural = require('natural')
+// const {nlp} = require('node-nlp')
 const textCorpora = require('./TextCorpora').TextCorpora
+
+const { containerBootstrap } = require('@nlpjs/core');
+const { Nlp } = require('@nlpjs/nlp');
+const { LangEn } = require('@nlpjs/lang-en-min');
+
 
 const soBaseUrl = "https://api.stackexchange.com/2.2/"
 let params = "search/advanced" + "?" + "site=stackoverflow" + "&sort=relevance" + "&οrder=desc" + "&answers=1" + "&accepted=true" + "&filter=!8IfuBy8t3Q.qCO)NDzOme" 
 
-const NLPUtility = {
-    stackOverflowQuery: async function (phrase) {
+class NLPUtility {
+    async stackOverflowQuery(phrase) {
         var query = encodeURI(soBaseUrl + params + `&tags=${env.language}` + `&q=${phrase}`)
         console.log(query)
         let code = ""
@@ -29,9 +33,10 @@ const NLPUtility = {
                 console.error("big big sad: " + error)
             })
             return code
-    },
+    }
 
-    loadModel: function(input) {
+    loadModel(input) {
+        
         // let checkVCS = function(input, classifier) {
         //     let res = classifier.getClassifications(input)
         //     console.log(res)
@@ -55,38 +60,47 @@ const NLPUtility = {
         //     }
         // })
         // return classifierThing
-        return natural.BayesClassifier.restore(require('./classifierModel.json'))
-    },
+        return 
+    }
 
     
 
-    vcsTrain: function() {
-        let classifier = new natural.BayesClassifier()
+    async vcsTrain() {
 
-        classifier.addDocument('Commit my code','vcs.commit')
-        classifier.addDocument('Push to remote', 'vcs.push')
-        classifier.addDocument('Push my code', 'vcs.push')
-        classifier.addDocument('Switch to main branch', 'vcs.switch-branch')
-        classifier.addDocument('Add all files', 'vcs.addAll')
-        classifier.addDocument('Init repo', 'vcs.init')
-        classifier.addDocument('Create a repository', 'vcs.init')
-        classifier.addDocument('Make a new repository', 'vcs.init')
-        classifier.addDocument('Init repository', 'vcs.init')
+        const container = await containerBootstrap();
+        container.use(Nlp);
+        container.use(LangEn);
+        const manager = container.get('nlp');
+        manager.settings.autoSave = false;
+        manager.settings.modelFileName = 'classifierModel'
+        manager.addLanguage('en');
 
-        classifier.train()
+        manager.addDocument('en', 'Commit my code','vcs.commit')
+        manager.addDocument('en', 'Push to remote', 'vcs.push')
+        manager.addDocument('en', 'Push my code', 'vcs.push')
+        manager.addDocument('en', 'Switch to main branch', 'vcs.switch-branch')
+        manager.addDocument('en', 'Add all files', 'vcs.addAll')
+        manager.addDocument('en', 'Init repo', 'vcs.init')
+        manager.addDocument('en', 'Create a repository', 'vcs.init')
+        manager.addDocument('en', 'Make a new repository', 'vcs.init')
+        manager.addDocument('en', 'Init repository', 'vcs.init')
+
+        await manager.train()
+        // manager.save()
+        let ex = await manager.process('en', 'commit my code')
+        // debugger
+        console.log('commit my code: ' + ex.classifications[0].intent)
+        return manager
         
-        classifier.save(__dirname + '/classifierModel.json', (error, classifier) => {
-            if(error) {
-                console.log(error)
-                console.log(__dirname)
-                debugger;
-            }
-            else 
-                console.log('Classifier saved')
+    }
+
+    get classifier() {
+        return this.vcsTrain().then(async (res)=> {
+            return res
         })
-        return classifier
-    },
-    vcsOps : function(classification) {
+    }
+
+    vcsOps(phrase, classification) {
         switch(classification) {
             case 'vcs.commit':
                 env.vcs.currentRepo.commit(() => {
@@ -120,6 +134,9 @@ const NLPUtility = {
                 }
                 break;
 
+
+            case 'None':
+                return this.stackOverflowQuery(phrase)
             default:
                 console.log('defau')
 

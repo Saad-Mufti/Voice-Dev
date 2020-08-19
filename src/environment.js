@@ -1,4 +1,7 @@
 const vscode = require('vscode')
+// const thing = import { Git } from './git.d.ts'
+
+// const {API} = require('./git.d.ts')
 
 
 // var Environment = {
@@ -15,13 +18,16 @@ const vscode = require('vscode')
 // }
 
 var Environment = new function() {
+    
     let language = vscode.window.activeTextEditor.document.languageId
     let activeWorkspace = vscode.workspace.name ? true : false
     let editor = vscode.window.activeTextEditor
+    let cursorPos = editor.selection.active
     // let cursor = v
 
     let vcs = function() {
-        let extensionApi = vscode.extensions.getExtension('vscode.git').exports.getApi(1)
+        let extension = vscode.extensions.getExtension('vscode.git')
+        let extensionApi = extension.exports.getApi(1)
         let repos = extensionApi.repositories
         let currentRepo = extensionApi.repositories[0]
         let branches = extensionApi.branches
