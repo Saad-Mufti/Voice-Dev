@@ -1,10 +1,16 @@
-const vscode = require('vscode');
+
+// import * as vscode from 'vscode'
+// import * as vad from 'node-vad'
 const vad = require('node-vad')
+import * as vscode from 'vscode'
+// const vscode = require('vscode');
 const deepSpeech = require('deepspeech')
+// import * as deepSpeech from 'deepspeech'
 const mic = require('node-audiorecorder')
+// import * as mic from 'node-audiorecorder'
 const NLPUtil = new (require('./nlpUtil').NLPUtility)
-const {GitExtension} = require('./git.d.ts')
-// import './git.d.ts'
+import { API, GitExtension } from "./git/git";
+const path = require('path')
 
 
 const vadMode = vad.Mode.AGGRESSIVE
@@ -16,7 +22,7 @@ let silenceStart = null
 
 function initVoiceModel() {
 	if (!process.env.PRETRAINED_ENG_MODEL_PATH) {
-		process.env.PRETRAINED_ENG_MODEL_PATH = __dirname + "\\DeepSpeechPreTrainedModel"
+		process.env.PRETRAINED_ENG_MODEL_PATH = path.join(__dirname, "..\\") + "DeepSpeechPreTrainedModel"
 	}
 
 	model = new deepSpeech.Model(process.env.PRETRAINED_ENG_MODEL_PATH + "\\deepspeech-0.7.4-models.pbmm")
@@ -129,7 +135,7 @@ async function interpretRequest(input) {
 		console.log("Target language has changed: " + language)
 	}
 	else {
-		
+
 		if (!language) {
 			language = vscode.window.activeTextEditor.document.languageId
 		}
@@ -144,10 +150,10 @@ async function interpretRequest(input) {
 		// debugger;
 		let intent = res.classifications[0].intent
 		console.log(intent)
-		if(intent == 'None') {
-			console.log(gitApi)
+		if (intent == 'None') {
+			// console.log(gitApi)
 			let editor = vscode.window.activeTextEditor
-    		let cursorPos = editor.selection.active
+			let cursorPos = editor.selection.active
 			let code = await NLPUtil.stackOverflowQuery(input)
 			editor.edit((editBuilder) => {
 				editBuilder.insert(cursorPos, code)
@@ -248,14 +254,14 @@ function activate(context) {
 
 		console.log("Listening now")
 		model = initVoiceModel()
-		
-		vscode.extensions.getExtension('vscode.git').activate().then((api)=> {
-			console.log('Git extension activated')
-			// debugger
-			gitApi = api.getApi(1)
-		})
 
-		gitApi = vscode.extensions.getExtension('vscode.git').exports.getApi(1)
+		getGitAPI().then(
+			(res) => { 
+				console.log('activated') 
+				gitApi = res
+				debugger
+			}
+		)
 
 		NLPUtil.vcsTrain().then(async (thing) => {
 			classifier = thing
@@ -282,6 +288,18 @@ exports.activate = activate;
 // this method is called when your extension is deactivated
 function deactivate() {
 	vscode.window.showInformationMessage("It's quite sad to see you go :( \nWould you like to give some feedback so we can improve for next time?");
+}
+
+async function getGitAPI(): Promise<API> | undefined {
+	try {
+		gitApi = vscode.extensions.getExtension<GitExtension>('vscode.git')
+		if (gitApi !== undefined) {
+			gitApi = gitApi.isActive ? gitApi.exports : await gitApi.activate()
+			return gitApi = gitApi.getApi(1)
+		}
+	}
+	catch{}
+	return undefined;
 }
 
 module.exports = {

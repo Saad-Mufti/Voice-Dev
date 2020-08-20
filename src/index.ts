@@ -1,0 +1,1 @@
+export {Git, API, GitExtension} from './git/git';

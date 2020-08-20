@@ -5,8 +5,8 @@
     - "Switch to 'xyz' branch"
 */
 
-const nlp = require('node-nlp')
-const vscode = require('vscode')
+// const nlp = require('node-nlp')
+// const vscode = require('vscode')
 
 var TextCorpora = {
     vcs: ["pull", "push", "commit", "project", "git", "branch", "rebase", "fetch", "merge", "revert"],

@@ -1,7 +1,7 @@
 const axios = require('axios').default
 const env = require('./environment').Environment
 // const {nlp} = require('node-nlp')
-const textCorpora = require('./TextCorpora').TextCorpora
+// const textCorpora = require('./TextCorpora.ts').TextCorpora
 
 const { containerBootstrap } = require('@nlpjs/core');
 const { Nlp } = require('@nlpjs/nlp');
@@ -94,7 +94,7 @@ class NLPUtility {
         
     }
 
-    get classifier() {
+    classifier() {
         return this.vcsTrain().then(async (res)=> {
             return res
         })
