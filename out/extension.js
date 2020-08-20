@@ -141,7 +141,10 @@ function interpretRequest(input) {
                 });
             }
             else {
-                NLPUtil.vcsOps(input, intent);
+                if (gitApi)
+                    NLPUtil.vcsOps(input, intent);
+                else
+                    vscode.window.showErrorMessage('Git API Not Available. VCS Commands Will Not Work.');
             }
         }
     });

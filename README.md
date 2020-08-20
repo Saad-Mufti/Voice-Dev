@@ -1,17 +1,11 @@
 # voice-dev
 
 Streamline your development workflow by leveraging Voice-Dev. Voice-Dev is a VS Code Expansion where you can speak commands to your machine and expect an output of code for whichever language you are working in. 
-The extension uses node-audiorecorder to get audio input, and Mozilla's DeepSpeech pre-trained English model as a Speech-to-Text engine. 
+The extension uses node-audiorecorder to get audio input, Mozilla's DeepSpeech pre-trained English model as a Speech-to-Text engine, and NLP.js to process and intelligently interpret requests using NLP classifications. 
 
 ## Features
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
-
-For example if there is an image subfolder under your extension project workspace:
-
-\!\[feature X\]\(images/feature-x.png\)
-
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+-Get code directly from stackoverflow from spoken queries.
 
 ## Requirements
 
@@ -30,15 +24,13 @@ This extension contributes the following settings:
 
 ## Known Issues
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+- Currently there may be an issue with accessing the built in Git API so using VCS related commands may not work. This is currently being investigated. 
 
 --------------------------------------
 
 ## Release Notes
 
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
+### 0.0.1
 
 Initial Release! Windows audio input seems to work fine (other platforms need to be tested), and the deepspeech engine also seems to be working fine. 
 

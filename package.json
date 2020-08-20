@@ -2,8 +2,16 @@
 	"name": "voice-dev",
 	"displayName": "Voice Dev",
 	"description": "idk",
+	"repository": {
+		"url": "https://github.com/Saad-Mufti/Voice-Dev"
+	},
 	"version": "0.0.1",
 	"type": "module",
+	"author": {
+		"name": "SaadM",
+		"email": "saadmuf10@gmail.com"
+	},
+	"publisher": "Saad",
 	"engines": {
 		"vscode": "^1.43.0"
 	},
